@@ -7,8 +7,8 @@ from .scrape_data import get_returns
 
 def get_sharpe_weights(stocks):
     """
-    Gets the (slightly inoptimal) sharpe weights. Uses the utility function
-    s mu - 2 a w^t V(stocks) w.
+    Gets the (slightly inoptimal) sharpe weights (normalized). 
+    Uses the utility function mu - 2 a w^t V(stocks) w.
     Params:
     stocks: A list of stocks you want to calculate this for.
     """
