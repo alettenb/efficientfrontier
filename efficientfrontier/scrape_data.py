@@ -25,7 +25,7 @@ def get_last_first_trade_date(stocks):
     max_date = max_date[: max_date.rfind('-') + 1] + '01'
     return max_date
 
-def extract_attributes_from_stock_dataframe(
+def extract_attributes_from_stock_json(
     stock,
     attributes,
     all_stock_prices
@@ -38,11 +38,45 @@ def extract_attributes_from_stock_dataframe(
     Params:
     stock: A string representing the stock we are looking for.
     attributes: A list of attributes about the price we are getting.
-    all_stock_prices: A dataframe from yahoo financials containing the stock
+    all_stock_prices: A json from yahoo financials containing the stock
         in question's historical data.
     """
-    pass
+    prices_dict = {}
+    p = all_stock_prices[stock]['prices']
+    date = []
+    for a in attributes:
+        prices_dict[stock + '.' + a] = []
 
+    for json in p:
+        date.append(json['formatted_date'])
+        for a in attributes:
+            prices_dict[stock + '.' + a].append(json[a])
+        
+    prices_dict['date'] = date
+    
+    return pd.DataFrame(data = prices_dict)
+
+
+def get_stock_json(stocks, timeframe='monthly'):
+    """
+    Gets a JSON of historical stock data from yahoo financials.
+
+    Params:
+    stocks: A list of stocks you want to get data for.
+    timeframe: The time step you want to get data for. Includes daily, weekly,
+        monthly. 
+    """
+
+    # Gets the most recent IPO date.
+    stock_financials = yf.YahooFinancials(stocks)
+    today = str(yf.datetime.date.today())
+    first_trade = get_last_first_trade_date(stocks)
+
+    return stock_financials.get_historical_price_data(
+        first_trade,
+        today,
+        timeframe,
+    )
 
 
 def get_data(stocks, attributes, timeframe='monthly'):
@@ -63,39 +97,24 @@ def get_data(stocks, attributes, timeframe='monthly'):
     if (type(attributes) == str):
         attributes = [attributes]
 
-    # Gets the most recent IPO date.
-    stock_financials = yf.YahooFinancials(stocks)
-    today = str(yf.datetime.date.today())
-    first_trade = get_last_first_trade_date(stocks)
+    # Gets a JSON of all stock prices. 
+    prices_together = get_stock_json(stocks, timeframe)
 
-    prices_together = stock_financials.get_historical_price_data(
-        first_trade,
-        today,
-        timeframe,
-    )
-
+    # Converts the JSON to a clean DataFrame.
     df = None
     for s in stocks:
-        prices_dict = {}
-        p = prices_together[s]['prices']
-        date = []
-        for a in attributes:
-            prices_dict[s + '.' + a] = []
-
-        for json in p:
-            date.append(json['formatted_date'])
-            for a in attributes:
-                prices_dict[s + '.' + a].append(json[a])
-            
-        prices_dict['date'] = date
-        
-        d = pd.DataFrame(data = prices_dict)
+        d = extract_attributes_from_stock_json(
+            s, 
+            attributes, 
+            prices_together
+        )
         if df is None:
             df = d
         else:
             df = df.merge(d)
     df = df.set_index('date')
 
+    # Changes the title of the DataFrame Columns.
     arr = []
     for c in df.columns:
         dot_ind = c.find('.')
@@ -106,6 +125,35 @@ def get_data(stocks, attributes, timeframe='monthly'):
      
     return df
 
+def derive_returns(stocks, price_dataframe):
+    """
+    Given stocks and a dataframe containing closing prices, derives monthly
+    returns.
+
+    Params:
+    stocks: A list of stocks you are looking at.
+    price_dataframe: A dataframe of the stocks' closing prices.
+    """
+    # Creates an dictionary for the stocks' expected returns.
+    expected_returns = {}
+    expected_returns['date'] = []
+    for s in stocks:
+        expected_returns[s] = []
+
+    # Iterates throught the dataframe and gets the return at each date.
+    for i in range(1, len(price_dataframe)):
+        previous_date = price_dataframe.iloc[i-1]
+        current_date = price_dataframe.iloc[i]
+        
+        expected_returns['date'].append(current_date.name)
+
+        for s in stocks:
+            single_return = (current_date[s, 'adjclose'] - 
+                previous_date[s, 'adjclose']) / previous_date[s, 'adjclose']
+            expected_returns[s].append(single_return)
+    return expected_returns
+
+
 def get_returns(stocks, timeframe='monthly'):
     """
     Returns a dataframe of returns for given stocks.
@@ -113,26 +161,15 @@ def get_returns(stocks, timeframe='monthly'):
     stocks: String or list of stocks you want to get it for.
     timeframe: The timeframe you want to get it for. Can do daily, weekly, monthly.
     """
+    # Converts a string of stocks to a list.
     if (type(stocks) == str):
         stocks = [stocks]
 
+    # Gets the adjusted closing price for the stocks in question.
     df_init = get_data(stocks, 'adjclose', timeframe=timeframe)
 
-    expected_returns = {}
-    expected_returns['date'] = []
-    for s in stocks:
-        expected_returns[s] = []
-
-    for i in range(1, len(df_init)):
-        old_row = df_init.iloc[i-1]
-        new_row = df_init.iloc[i]
-        
-        expected_returns['date'].append(new_row.name)
-
-        for s in stocks:
-            er = (new_row[s, 'adjclose'] - old_row[s, 'adjclose']) / old_row[s, 'adjclose']
-            expected_returns[s].append(er)
-
+    # Gets the expected returns and makes them into a dataframe.
+    expected_returns = derive_returns(stocks, df_init)
     df = pd.DataFrame(data=expected_returns)
     df = df.set_index('date')
 

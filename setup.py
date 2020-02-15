@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
 
 setuptools.setup(
     name='efficientfrontier',
-    version='0.0.6',
+    version='0.0.7',
     author='Alex Lettenberger',
     author_email='alex.lettenberger@gmail.com',
     description='Functions for calculating an efficient frontier.',
