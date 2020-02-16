@@ -1,16 +1,3 @@
-# About
-This is package for finding the efficient frontier of stocks.
-
-# Installation
-To install: Go to the folder above where you download this. Then, type
-`pip install -e efficientfrontier`. After that, you can go through the 
-walkthrough!
-
-# Walkthrough
-The walkthrough is `sandbox/stock_calcs.ipynb`. You can run through this after
-installing the package. It goes over the basic functionality.
-
-
 # Efficient Frontier Calculator
 
 This project is all about finding the efficient frontier for stocks. It both scrapes data from Yahoo! Finance and uses it to get the optimal combination of given stocks. 
@@ -31,72 +18,41 @@ This project uses a couple of preexisting Python packages. Since it is not hoste
 
 ### Installing
 
-A step by step series of examples that tell you how to get a development env running
+To install: Go to the folder above where you download this in the terminal you use with python (can be a Jupyter Notebook/Lab terminal). Then, type
+`pip install -e efficientfrontier`. After that, you should be able to import and use the code. 
 
-Say what the step will be
-
+## Usage
+The walkthrough is contained in `sandbox/stock_calcs.ipynb`. It is also outlined below here. You can get data for the following stocks:
 ```
-Give the example
+stocks = ['GOOGL', 'AAPL', 'PG', 'JPM']
 ```
-
-And repeat
-
+To get various data for the stocks, you can use the following function:
 ```
-until finished
+efficientfrontier.get_data(stocks, ['open', 'close', 'high', 'low', 'adjclose'])
 ```
+This gets the open, close, high, low and adjusted closing prices for the stocks, on a monthly basis. 
 
-End with an example of getting some data out of the system or using it for a little demo
-
-## Running the tests
-
-Explain how to run the automated tests for this system
-
-### Break down into end to end tests
-
-Explain what these tests test and why
-
+Then, to get monthly returns for the stocks, you can use the `get_returns` function.
 ```
-Give an example
+efficientfrontier.get_returns(stocks)
 ```
 
-### And coding style tests
-
-Explain what these tests test and why
-
+You can also get the stocks' expected returns (means) and covariances. 
 ```
-Give an example
+efficientfrontier.get_mean_and_variance(stocks)
 ```
 
-## Deployment
+You can get the Sharpe Weight portfolio by using
+```
+efficientfrontier.get_sharpe_weights(stocks)
+```
 
-Add additional notes about how to deploy this on a live system
+Finally, you can get a HoloViews graph for the efficient frontier by using
+```
+efficientfrontier.efficient_frontier_graph(stocks, use_sharpe_portfolio=True)
+```
+The `use_sharpe_portfolio` argument adds a point on the efficient frontier graph with the expected return and standard deviation of the Sharpe Weight portfolio.
 
-## Built With
+## Author
 
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
-
-## Contributing
-
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
-
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
-
-## Authors
-
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
-
-## Acknowledgments
-
-* Hat tip to anyone whose code was used
-* Inspiration
-* etc
+* Alex Lettenberger
